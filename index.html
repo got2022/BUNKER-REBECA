@@ -1,0 +1,357 @@
+import React, { useState, useCallback } from 'react';
+// Importação corrigida incluindo o ícone Star
+import { Shield, Zap, MessageCircle, Info, Lock, RefreshCcw, Volume2, Smile, Layers, Heart, Radio, Terminal, Trophy, Star } from 'lucide-react';
+
+const grammarClasses = [
+  // --- VARIÁVEIS (ELAS MUDAM - Como os movimentos da Rebeca!) ---
+  { 
+    id: 'Sub', name: 'Substantivo', cat: 'Variável', 
+    color: 'from-blue-600 to-indigo-800', shadow: 'shadow-blue-900/40', 
+    desc: 'O solo da ginástica! Dá nome a tudo no bunker: atletas, medalhas e sonhos.', 
+    flex: 'Muda de forma! Como uma acrobacia, varia em género (atleta/atleta) e número (medalha/medalhas).', 
+    simpleTip: 'Se podes colocar "O" ou "A" na frente, é um substantivo!',
+    examples: ['Rebeca', 'Ginástica', 'Ouro', 'Pódio'],
+    note: 523.25, noteName: 'Dó'
+  },
+  { 
+    id: 'Ver', name: 'Verbo', cat: 'Variável', 
+    color: 'from-violet-600 to-purple-900', shadow: 'shadow-purple-900/40', 
+    desc: 'A ação do salto! Indica o movimento, o esforço e a vitória.', 
+    flex: 'Muda de forma! Ajusta-se ao tempo (saltou, salta) e à pessoa (eu salto, nós saltamos).', 
+    simpleTip: 'É a palavra que consegues conjugar como um treino!',
+    examples: ['Saltar', 'Vencer', 'Treinar', 'Brilhar'],
+    note: 587.33, noteName: 'Ré'
+  },
+  { 
+    id: 'Adj', name: 'Adjetivo', cat: 'Variável', 
+    color: 'from-cyan-500 to-blue-700', shadow: 'shadow-cyan-900/40', 
+    desc: 'O brilho do collant! Dá a característica e a qualidade para o substantivo.', 
+    flex: 'Muda de forma! Transforma-se para combinar com o nome (atleta rápida, atletas rápidas).', 
+    simpleTip: 'Responde à pergunta: "Como a Rebeca é?".',
+    examples: ['Incrível', 'Dourada', 'Forte', 'Ágil'],
+    note: 659.25, noteName: 'Mi'
+  },
+  { 
+    id: 'Pro', name: 'Pronome', cat: 'Variável', 
+    color: 'from-fuchsia-600 to-pink-800', shadow: 'shadow-fuchsia-900/40', 
+    desc: 'O reserva tático! Substitui o nome para a frase não ficar cansada.', 
+    flex: 'Muda de forma! Altera-se dependendo de quem está na conversa (eu, ela, nós).', 
+    simpleTip: 'Ajuda a não repetir "Rebeca" o tempo todo no texto.',
+    examples: ['Ela', 'Nossa', 'Aquela', 'Minha'],
+    note: 698.46, noteName: 'Fá'
+  },
+  { 
+    id: 'Art', name: 'Artigo', cat: 'Variável', 
+    color: 'from-sky-500 to-blue-600', shadow: 'shadow-sky-900/40', 
+    desc: 'O batedor de entrada! Vem antes do substantivo para definir o destaque.', 
+    flex: 'Muda de forma! Tem de estar sempre igual ao substantivo.', 
+    simpleTip: 'As menores palavras: O, A, Os, As, Um, Uma...',
+    examples: ['A (campeã)', 'Uma (vitória)', 'As (meninas)'],
+    note: 783.99, noteName: 'Sol'
+  },
+  { 
+    id: 'Num', name: 'Numeral', cat: 'Variável', 
+    color: 'from-teal-500 to-emerald-700', shadow: 'shadow-teal-900/40', 
+    desc: 'O placar dos juízes! Indica a quantidade de medalhas ou a posição.', 
+    flex: 'Muda de forma! Alguns mudam (um/uma, dois/duas), outros são fixos.', 
+    simpleTip: 'Tudo o que envolve contagem: 1º lugar, duas notas...',
+    examples: ['Primeiro', 'Quatro', 'Triplo', 'Meio'],
+    note: 880.00, noteName: 'Lá'
+  },
+
+  // --- INVARIÁVEIS (NÃO MUDAM! - A firmeza da aterrissagem) ---
+  { 
+    id: 'Adv', name: 'Advérbio', cat: 'Invariável', 
+    color: 'from-orange-600 to-yellow-700', shadow: 'shadow-orange-900/40', 
+    desc: 'O sinal do técnico! Diz como, onde ou quando o salto aconteceu.', 
+    flex: 'Não muda de forma! É uma peça fixa no bunker. Não tem plural nem feminino.', 
+    simpleTip: 'Dá um detalhe extra: saltou BEM? Treinou AQUI?',
+    examples: ['Muito', 'Ontem', 'Bem', 'Lá'],
+    note: 987.77, noteName: 'Si'
+  },
+  { 
+    id: 'Pre', name: 'Preposição', cat: 'Invariável', 
+    color: 'from-amber-600 to-orange-800', shadow: 'shadow-amber-900/40', 
+    desc: 'A liga da trave! Une uma palavra na outra sem nunca quebrar.', 
+    flex: 'Não muda de forma! A sua escrita é permanente, como um conector de aço.', 
+    simpleTip: 'Une as palavras: medalha DE ouro.',
+    examples: ['De', 'Para', 'Com', 'Em'],
+    note: 1046.50, noteName: 'Dó+'
+  },
+  { 
+    id: 'Con', name: 'Conjunção', cat: 'Invariável', 
+    color: 'from-red-600 to-rose-800', shadow: 'shadow-red-900/40', 
+    desc: 'O gancho rítmico! Une frases para a coreografia fazer sentido.', 
+    flex: 'Não muda de forma! Funciona como um grampo fixo entre as ideias.', 
+    simpleTip: 'É o "e", o "mas" ou o "porque" que une tudo.',
+    examples: ['E', 'Mas', 'Porque', 'Pois'],
+    note: 1174.66, noteName: 'Ré+'
+  },
+  { 
+    id: 'Int', name: 'Interjeição', cat: 'Invariável', 
+    color: 'from-pink-600 to-red-800', shadow: 'shadow-pink-900/40', 
+    desc: 'O grito da torcida! Mostra a emoção súbita da vitória.', 
+    flex: 'Não muda de forma! É uma explosão de voz que fica sempre igual.', 
+    simpleTip: 'Vem quase sempre com exclamação (!).',
+    examples: ['Uau!', 'Bravo!', 'Ah!', 'Eita!'],
+    note: 1318.51, noteName: 'Mi+'
+  },
+];
+
+const BackgroundIcons = () => {
+  const elements = [
+    { emoji: '🍭', color: 'text-pink-500', top: '5%', left: '8%' },
+    { emoji: '📱', color: 'text-gray-400', top: '15%', left: '88%' },
+    { emoji: '📓', color: 'text-blue-500', top: '45%', left: '4%' },
+    { emoji: '🧼', color: 'text-white', top: '75%', left: '10%' },
+    { emoji: '⚽', color: 'text-slate-100', top: '85%', left: '92%' },
+    { emoji: '🪆', color: 'text-red-500', top: '30%', left: '95%' },
+    { emoji: '🍦', color: 'text-yellow-400', top: '65%', left: '85%' },
+    { emoji: '🧁', color: 'text-purple-400', top: '12%', left: '45%' },
+    { emoji: '🌭', color: 'text-orange-600', top: '80%', left: '40%' },
+    { emoji: '🍩', color: 'text-pink-300', top: '55%', left: '90%' },
+    { emoji: '🧸', color: 'text-amber-600', top: '22%', left: '15%' },
+    { emoji: '🛹', color: 'text-green-500', top: '10%', left: '25%' },
+  ];
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0">
+      {elements.map((item, idx) => (
+        <span 
+          key={idx} 
+          className={`absolute text-5xl md:text-7xl animate-float drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] ${item.color}`}
+          style={{ 
+            top: item.top, 
+            left: item.left,
+            animationDelay: `${idx * 0.7}s`,
+            animationDuration: `${5 + (idx % 3)}s`
+          }}
+        >
+          {item.emoji}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+export default function App() {
+  const [selected, setSelected] = useState(null);
+
+  const playMusicalNote = useCallback((frequency) => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = 'triangle'; 
+      oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime); 
+      
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 1.2);
+    } catch (e) {
+      console.warn("Áudio não suportado");
+    }
+  }, []);
+
+  const handleSelect = (item) => {
+    setSelected(item);
+    playMusicalNote(item.note);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 p-4 md:p-10 font-mono text-slate-100 relative selection:bg-indigo-500 overflow-x-hidden">
+      <BackgroundIcons />
+      
+      <div className="max-w-6xl mx-auto relative z-10">
+        
+        {/* Cabeçalho do Bunker */}
+        <header className="mb-10 text-center bg-slate-900/95 backdrop-blur-2xl p-8 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.5)] border-4 border-indigo-500/40 relative">
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 px-6 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-lg border-2 border-indigo-400 text-white">
+             Missão: Morfologia Olímpica
+          </div>
+          <div className="inline-flex items-center gap-6 mb-4">
+            <div className="bg-gradient-to-br from-yellow-400 to-amber-600 p-4 rounded-2xl shadow-[0_0_20px_rgba(251,191,36,0.5)] rotate-3 border-2 border-white/20">
+              <Trophy className="text-white" size={48} />
+            </div>
+            <div className="text-left">
+              <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-none text-white">
+                BUNKER <span className="text-indigo-400">REBECA</span>
+              </h1>
+              <div className="flex items-center gap-2 mt-2 bg-black/50 px-3 py-1 rounded-lg border border-white/10">
+                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-none">Sistema: Escala Musical Ativa</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Painel de Comandos */}
+          <div className="lg:col-span-7 bg-slate-900/90 backdrop-blur-xl p-8 rounded-[3rem] shadow-2xl border-2 border-indigo-500/20">
+            <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border-b-2 border-slate-800 pb-6">
+              <h3 className="text-xs font-black text-indigo-300 uppercase tracking-widest flex items-center gap-3">
+                <Terminal size={18} /> Módulos de Palavras
+              </h3>
+              
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center gap-1 bg-blue-600/20 text-blue-400 px-4 py-2 rounded-xl border border-blue-500/40 min-w-[120px]">
+                    <RefreshCcw size={14} className="animate-spin-slow" />
+                    <span className="text-[10px] font-black uppercase tracking-tighter leading-none">Variáveis</span>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-tighter mt-1 leading-none italic">ELAS MUDAM!</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 bg-orange-600/20 text-orange-400 px-4 py-2 rounded-xl border border-orange-500/40 min-w-[120px]">
+                    <Lock size={14} />
+                    <span className="text-[10px] font-black uppercase tracking-tighter leading-none">Invariáveis</span>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-tighter mt-1 leading-none italic">NÃO MUDAM!</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {grammarClasses.map((cls) => (
+                <button
+                  key={cls.id}
+                  onClick={() => handleSelect(cls)}
+                  className={`
+                    relative aspect-square flex flex-col items-center justify-center rounded-2xl transition-all duration-300 
+                    transform hover:scale-110 active:scale-95 shadow-xl group overflow-hidden border-2
+                    bg-gradient-to-br ${cls.color} ${cls.shadow}
+                    ${selected?.id === cls.id ? 'ring-4 ring-white ring-offset-4 ring-offset-slate-950 border-white scale-105 z-10' : 'border-white/10 opacity-90'}
+                  `}
+                >
+                  <span className="text-[10px] font-black opacity-40 absolute top-2 left-3 text-white leading-none">{cls.id}</span>
+                  <div className="absolute top-2 right-3 text-white/60 text-[10px] font-bold">{cls.noteName}</div>
+                  
+                  <span className="text-[14px] font-black uppercase text-center leading-tight px-1 group-hover:scale-110 transition-transform tracking-tight text-white">
+                    {cls.name}
+                  </span>
+                  <div className={`mt-3 text-[8px] font-black px-2 py-0.5 rounded-full uppercase border border-white/30 text-white ${cls.cat === 'Variável' ? 'bg-blue-900/40' : 'bg-orange-900/40'}`}>
+                    {cls.cat}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-10 flex items-center justify-center gap-4 p-5 bg-black/50 rounded-2xl border-2 border-slate-800">
+              <Radio className="text-indigo-400 animate-pulse" size={24} />
+              <p className="text-[11px] font-bold text-slate-300 uppercase tracking-tighter leading-tight text-center">
+                Toque nos módulos para ouvir a escala musical completa da Rebeca.
+              </p>
+            </div>
+          </div>
+
+          {/* Monitor de Dados */}
+          <div className="lg:col-span-5">
+            {selected ? (
+              <div className="bg-slate-900 rounded-[3rem] shadow-[0_0_80px_rgba(0,0,0,0.6)] border-4 border-indigo-500/20 overflow-hidden sticky top-8 animate-in zoom-in-95 duration-500">
+                <div className={`bg-gradient-to-br ${selected.color} p-10 text-white relative border-b-4 border-black/20`}>
+                  <div className="absolute top-4 right-4 text-[10px] font-black bg-black/20 px-3 py-1 rounded-full border border-white/20">
+                     NOTA: {selected.noteName}
+                  </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-6xl font-black opacity-20 tracking-tighter leading-none">{selected.id}</span>
+                    <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-xl border border-white/30">
+                        {selected.cat === 'Variável' ? <RefreshCcw size={32} /> : <Lock size={32} />}
+                    </div>
+                  </div>
+                  <h2 className="text-5xl font-black tracking-tighter uppercase mb-2 leading-none">{selected.name}</h2>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-white animate-pulse shadow-[0_0_10px_#fff]"></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/90">
+                      ESTADO: {selected.cat === 'Variável' ? 'EM MUDANÇA' : 'NÃO MUDA NUNCA'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-8 space-y-8 bg-slate-900">
+                  <section>
+                    <h4 className="flex items-center gap-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 border-b border-slate-800 pb-2">
+                      <Zap size={16} className="text-yellow-400 fill-yellow-400" /> Relatório Tático
+                    </h4>
+                    <p className="text-slate-100 font-bold text-xl leading-snug tracking-tight">
+                      {selected.desc}
+                    </p>
+                  </section>
+
+                  <section className={`p-6 rounded-2xl border-l-[12px] bg-black/30 ${selected.cat === 'Variável' ? 'border-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.1)]' : 'border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.1)]'}`}>
+                    <h4 className={`text-[10px] font-black uppercase tracking-widest mb-2 ${selected.cat === 'Variável' ? 'text-blue-400' : 'text-orange-400'}`}>
+                      Regra Olímpica
+                    </h4>
+                    <p className="text-sm font-medium text-slate-300 leading-snug">
+                      {selected.flex}
+                    </p>
+                  </section>
+
+                  <section className="bg-indigo-900/30 p-6 rounded-2xl border-2 border-indigo-500/30">
+                    <h4 className="flex items-center gap-3 text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">
+                      <Info size={16} /> Dica do Técnico
+                    </h4>
+                    <p className="text-lg font-black text-indigo-100 italic leading-snug">
+                      "{selected.simpleTip}"
+                    </p>
+                  </section>
+
+                  <section>
+                    <h4 className="flex items-center gap-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
+                      <MessageCircle size={16} className="text-emerald-400" /> Exemplos Registados
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {selected.examples.map((ex, i) => (
+                        <div key={i} className="px-4 py-3 bg-black/50 border border-slate-800 text-indigo-300 rounded-xl text-center text-xs font-black">
+                          {ex}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full min-h-[500px] flex flex-col items-center justify-center text-center p-12 bg-slate-900/60 backdrop-blur-md rounded-[4rem] border-4 border-dashed border-slate-800">
+                 <div className="bg-slate-900 p-12 rounded-full shadow-2xl mb-10 relative border-2 border-indigo-500/40 transform hover:scale-110 transition-transform">
+                    {/* Ícone Star corrigido */}
+                    <Star size={80} className="text-yellow-400 animate-spin-slow fill-yellow-400/10 shadow-[0_0_30px_rgba(234,179,8,0.2)]" />
+                 </div>
+                 <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">Aguardando <br/> Seleção Tática</h3>
+                 <p className="text-slate-500 font-bold text-sm mt-6 max-w-xs mx-auto leading-tight uppercase tracking-tighter">
+                    Toca nos módulos para ver as cores e ouvir a melodia gramatical.
+                 </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <footer className="mt-20 py-10 border-t-2 border-slate-800 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-30"></div>
+          <p className="text-xs font-black uppercase tracking-[0.8em] text-slate-500 hover:text-indigo-400 transition-colors cursor-default">
+            Criado pela Profª Goretti
+          </p>
+        </footer>
+
+      </div>
+      
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+          50% { transform: translateY(-30px) rotate(15deg) scale(1.1); }
+        }
+        .animate-float {
+          animation: float linear infinite;
+        }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 20s linear infinite;
+        }
+      `}} />
+    </div>
+  );
+}
